@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="utf-8">
+        <title>Морской бой</title>
+        <style>
+
+            .fields-container {
+                display: flex;
+                justify-content: flex-start;
+                margin-top: 20px;
+                gap: 50px;
+            }
+
+            table {
+                border-collapse: collapse;
+            }
+
+            td {
+                width: 30px;
+                height: 30px;
+                border: 1px solid black;
+                text-align: center;
+                vertical-align: middle;
+                font-size: 20px;
+            }
+
+            .occupied {
+                background-color: lightblue;
+            }
+
+            .player-field {
+                margin-left: 0px;
+            }
+            
+        </style>
+    </head>
+    <body>
+        <h1>Морской бой</h1>
+
+        <div class="gameButtons">
+            <button id="start-game">Начать игру</button>
+            <button id="reset-game">Перезапустить игру</button>
+            <button id="radnomShipPlacement">Случайно расположить корабли</button>
+        </div>
+
+        <div class="shipPlacerControls">
+            <button class="selectShip" data-size="4">Линкор (4 клетки)</button>
+            <button class="selectShip" data-size="3">Крейсер (3 клетки)</button>
+            <button class="selectShip" data-size="2">Эсминец (2 клетки)</button>
+            <button class="selectShip" data-size="1">Торпедный катер (1 клетка)</button>
+
+            <button id="direction">Горизонтально</button>
+        </div>
+
+        <div class="fields-container">
+            <table id="player-field" class="player-field">
+            </table>
+            <table id="computer-field" class="computer-field">
+            </table>
+        </div>
+        <script>
+            let selectedShip = null;
+            let direction = 'horizontal';
+
+            function createTable(tableId, tableClass) {
+                const table = document.createElement('table');
+                table.id = tableId;
+                table.classList.add(tableClass);
+
+             for (let i = 0; i < 10; i++) {
+                const tr = document.createElement('tr');
+                for (let j = 0; j < 10; j++) {
+                    const td = document.createElement('td');
+                    td.id = `${tableId}-cell-${i}-${j}`;
+                    td.classList.add('cell');
+
+                    tr.appendChild(td);
+                }
+                table.appendChild(tr);
+            }
+
+            return table;
+        }
+
+            const container = document.querySelector('.fields-container');
+            const playerTable = createTable('player-field', 'player-field');
+            const computerTable = createTable('computer-field', 'computer-field')
+            container.appendChild(playerTable);
+            container.appendChild(computerTable);
+
+            const shipTypes = [
+                {name: 'Линкор', size: 4},
+                {name: 'Крейсер', size: 3},
+                {name: 'Крейсер', size: 3},
+                {name: 'Эсминец', size: 2},
+                {name: 'Эсминец', size: 2},
+                {name: 'Эсминец', size: 2},
+                {name: 'Торпедный катер', size: 1},
+                {name: 'Торпедный катер', size: 1},
+                {name: 'Торпедный катер', size: 1},
+                {name: 'Торпедный катер', size: 1}
+            ];
+
+            function canPlaceShip(table, startX, startY, size, direction) {
+                for(let i = 0; i < size; i++) {
+                    const x = direction === 'horizontal' ? startX : startX + i;
+                    const y = direction === 'horizontal' ? startY + i : startY;
+
+                    if (x >= 10 || y >= 10 || document.getElementById(`${table.id}-cell-${x}-${y}`).classList.contains('occupied')) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            function placeShip(table, startX, startY, size, direction) {
+                for (let i = 0; i < size; i++) {
+                    const x = direction === 'horizontal' ? startX : startX + i;
+                    const y = direction === 'horizontal' ? startY + i : startY;
+
+                    const cell = document.getElementById(`${table.id}-cell-${x}-${y}`);
+                    cell.classList.add('occupied');
+                    cell.textContent = '🚢';
+                }
+            }
+
+            function placeShipAutomatically(table, shipTypes) {
+                shipTypes.forEach(ship => {
+                    let placed = false;
+                    let attempts = 0;
+                    let maxAttempts = 1000;
+                    while(!placed && attempts < maxAttempts) {
+                        const startX = Math.floor(Math.random() * 10);
+                        const startY = Math.floor(Math.random() * 10);
+
+                        const direction = Math.random() < 0.5 ? 'horizontal' : 'vertical';
+
+                        if (canPlaceShip(table, startX, startY, ship.size, direction)) {
+                            placeShip(table, startX, startY, ship.size, direction);
+
+                            placed = true;
+                        }
+                        attempts++;
+                    }
+                    if (attempts >= maxAttempts) {
+                        console.error(`Не удалось разместить корабль ${ship.name} после ${maxAttempts} попыток`);
+                    }
+                })
+            }
+
+            placeShipAutomatically(computerTable, shipTypes);
+
+            document.querySelectorAll('.selectShip').forEach(button => {
+                button.addEventListener('click', function() {
+                    const size = parseInt(this.getAttribute('data-size'));
+                    selectedShip = {size: size};
+                })
+            })
+
+            document.getElementById('direction').addEventListener('click', function() {
+                direction = (direction === 'horizontal') ? 'vertical' : 'horizontal';
+                this.textContent = (direction === 'horizontal') ? 'Горизонтально' : 'Вертикально';
+                }
+            )
+
+            document.querySelectorAll('#player-field .cell').forEach(cell => {
+                cell.addEventListener('click', function() {
+                    if (!selectedShip) {
+                        alert('Сначала выберите корабль!');
+                        return;
+                    }
+
+                    const cellId = this.id;
+                    const parts = cellId.split('-');
+                    const x = parseInt(parts[3]);
+                    const y = parseInt(parts[4]);
+
+                    if(canPlaceShip(playerTable, x, y, selectedShip.size, direction)) {
+                        placeShip(playerTable, x, y, selectedShip.size, direction);
+                        selectedShip = null;
+                    } else {
+                        alert('Невозможно разместить корабль сюда!')
+                    }
+                })
+            })
+        </script>
+    </body>
+</html>
