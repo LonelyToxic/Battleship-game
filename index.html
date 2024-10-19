@@ -1,74 +1,74 @@
 <!DOCTYPE html>
 <html lang="ru">
-    <head>
-        <meta charset="utf-8">
-        <title>Морской бой</title>
-        <style>
+<head>
+    <meta charset="utf-8">
+    <title>Морской бой</title>
+    <style>
+        /* Скрываем контейнер с полями по умолчанию */
+        .fields-container {
+            display: none;
+            justify-content: flex-start;
+            margin-top: 20px;
+            gap: 50px;
+        }
 
-            .fields-container {
-                display: flex;
-                justify-content: flex-start;
-                margin-top: 20px;
-                gap: 50px;
-            }
+        table {
+            border-collapse: collapse;
+        }
 
-            table {
-                border-collapse: collapse;
-            }
+        td {
+            width: 30px;
+            height: 30px;
+            border: 1px solid black;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 20px;
+        }
 
-            td {
-                width: 30px;
-                height: 30px;
-                border: 1px solid black;
-                text-align: center;
-                vertical-align: middle;
-                font-size: 20px;
-            }
+        .occupied {
+            background-color: lightblue;
+        }
 
-            .occupied {
-                background-color: lightblue;
-            }
+        .player-field {
+            margin-left: 0px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Морской бой</h1>
 
-            .player-field {
-                margin-left: 0px;
-            }
-            
-        </style>
-    </head>
-    <body>
-        <h1>Морской бой</h1>
+    <div class="gameButtons">
+        <button id="start-game-button">Начать игру</button>
+        <button id="reset-game-button">Перезапустить игру</button>
+        <button id="radnom-ship-place-button">Случайно расположить корабли</button>
+    </div>
 
-        <div class="gameButtons">
-            <button id="start-game">Начать игру</button>
-            <button id="reset-game">Перезапустить игру</button>
-            <button id="radnomShipPlacement">Случайно расположить корабли</button>
-        </div>
+    <div class="shipPlacerControls">
+        <button class="selectShip" data-size="4">Линкор (4 клетки)</button>
+        <button class="selectShip" data-size="3">Крейсер (3 клетки)</button>
+        <button class="selectShip" data-size="2">Эсминец (2 клетки)</button>
+        <button class="selectShip" data-size="1">Торпедный катер (1 клетка)</button>
 
-        <div class="shipPlacerControls">
-            <button class="selectShip" data-size="4">Линкор (4 клетки)</button>
-            <button class="selectShip" data-size="3">Крейсер (3 клетки)</button>
-            <button class="selectShip" data-size="2">Эсминец (2 клетки)</button>
-            <button class="selectShip" data-size="1">Торпедный катер (1 клетка)</button>
+        <button id="direction">Горизонтально</button>
+    </div>
 
-            <button id="direction">Горизонтально</button>
-        </div>
+    <div class="fields-container">
+        <table id="player-field" class="player-field">
+        </table>
+        <table id="computer-field" class="computer-field">
+        </table>
+    </div>
+    <script>
+        let selectedShip = null; // Выбранный корабль для размещения
+        let direction = 'horizontal'; // Направление размещения корабля
 
-        <div class="fields-container">
-            <table id="player-field" class="player-field">
-            </table>
-            <table id="computer-field" class="computer-field">
-            </table>
-        </div>
-        <script>
-            let selectedShip = null;
-            let direction = 'horizontal';
+        // Функция для создания таблицы игрового поля
+        function createTable(tableId, tableClass) {
+            const table = document.createElement('table');
+            table.id = tableId;
+            table.classList.add(tableClass);
 
-            function createTable(tableId, tableClass) {
-                const table = document.createElement('table');
-                table.id = tableId;
-                table.classList.add(tableClass);
-
-             for (let i = 0; i < 10; i++) {
+            for (let i = 0; i < 10; i++) {
                 const tr = document.createElement('tr');
                 for (let j = 0; j < 10; j++) {
                     const td = document.createElement('td');
@@ -83,107 +83,189 @@
             return table;
         }
 
-            const container = document.querySelector('.fields-container');
-            const playerTable = createTable('player-field', 'player-field');
-            const computerTable = createTable('computer-field', 'computer-field')
-            container.appendChild(playerTable);
-            container.appendChild(computerTable);
+        const container = document.querySelector('.fields-container');
+        const playerTable = createTable('player-field', 'player-field');
+        const computerTable = createTable('computer-field', 'computer-field');
+        container.appendChild(playerTable);
+        container.appendChild(computerTable);
 
-            const shipTypes = [
-                {name: 'Линкор', size: 4},
-                {name: 'Крейсер', size: 3},
-                {name: 'Крейсер', size: 3},
-                {name: 'Эсминец', size: 2},
-                {name: 'Эсминец', size: 2},
-                {name: 'Эсминец', size: 2},
-                {name: 'Торпедный катер', size: 1},
-                {name: 'Торпедный катер', size: 1},
-                {name: 'Торпедный катер', size: 1},
-                {name: 'Торпедный катер', size: 1}
-            ];
+        // Массив типов кораблей
+        const shipTypes = [
+            {name: 'Линкор', size: 4},
+            {name: 'Крейсер', size: 3},
+            {name: 'Крейсер', size: 3},
+            {name: 'Эсминец', size: 2},
+            {name: 'Эсминец', size: 2},
+            {name: 'Эсминец', size: 2},
+            {name: 'Торпедный катер', size: 1},
+            {name: 'Торпедный катер', size: 1},
+            {name: 'Торпедный катер', size: 1},
+            {name: 'Торпедный катер', size: 1}
+        ];
 
-            function canPlaceShip(table, startX, startY, size, direction) {
-                for(let i = 0; i < size; i++) {
-                    const x = direction === 'horizontal' ? startX : startX + i;
-                    const y = direction === 'horizontal' ? startY + i : startY;
+        // Исправлено название переменной на "availableShips"
+        let availableShips = {
+            4: 1, // Линкор
+            3: 2, // Крейсеры
+            2: 3, // Эсминцы
+            1: 4  // Катера
+        };
 
-                    if (x >= 10 || y >= 10 || document.getElementById(`${table.id}-cell-${x}-${y}`).classList.contains('occupied')) {
-                        return false;
-                    }
+        const playerShips = []; // Массив кораблей игрока
+        const computerShips = []; // Массив кораблей компьютера
+
+        // Функция проверки возможности размещения корабля
+        function canPlaceShip(table, startX, startY, size, direction) {
+            for(let i = 0; i < size; i++) {
+                const x = direction === 'horizontal' ? startX : startX + i;
+                const y = direction === 'horizontal' ? startY + i : startY;
+
+                // Проверка выхода за границы и занятости клетки
+                if (x >= 10 || y >= 10 || document.getElementById(`${table.id}-cell-${x}-${y}`).classList.contains('occupied')) {
+                    return false;
                 }
-                return true;
             }
+            return true;
+        }
 
-            function placeShip(table, startX, startY, size, direction) {
-                for (let i = 0; i < size; i++) {
-                    const x = direction === 'horizontal' ? startX : startX + i;
-                    const y = direction === 'horizontal' ? startY + i : startY;
+        // Функция размещения корабля и добавления его в массив кораблей
+        function placeShip(table, startX, startY, size, direction, shipsArray) {
+            const shipCells = [];
 
-                    const cell = document.getElementById(`${table.id}-cell-${x}-${y}`);
-                    cell.classList.add('occupied');
-                    cell.textContent = '🚢';
+            for (let i = 0; i < size; i++) {
+                const x = direction === 'horizontal' ? startX : startX + i;
+                const y = direction === 'horizontal' ? startY + i : startY;
+
+                const cell = document.getElementById(`${table.id}-cell-${x}-${y}`);
+                cell.classList.add('occupied');
+
+                // Отображаем корабль только на поле игрока
+                if(table.id === 'player-field') {
+                    cell.textContent = '🚢'; 
                 }
+
+                shipCells.push({x: x, y: y, hit: false});
             }
+            
+            // Добавляем корабль в соответствующий массив
+            shipsArray.push({
+                size: size,
+                cells: shipCells,
+                sunk: false
+            });
+        }
 
-            function placeShipAutomatically(table, shipTypes) {
-                shipTypes.forEach(ship => {
-                    let placed = false;
-                    let attempts = 0;
-                    let maxAttempts = 1000;
-                    while(!placed && attempts < maxAttempts) {
-                        const startX = Math.floor(Math.random() * 10);
-                        const startY = Math.floor(Math.random() * 10);
+        // Функция автоматического размещения кораблей
+        function placeShipAutomatically(table, shipTypes) {
+            shipTypes.forEach(ship => {
+                let placed = false;
+                let attempts = 0;
+                let maxAttempts = 1000;
+                while(!placed && attempts < maxAttempts) {
+                    const startX = Math.floor(Math.random() * 10);
+                    const startY = Math.floor(Math.random() * 10);
 
-                        const direction = Math.random() < 0.5 ? 'horizontal' : 'vertical';
+                    const direction = Math.random() < 0.5 ? 'horizontal' : 'vertical';
 
-                        if (canPlaceShip(table, startX, startY, ship.size, direction)) {
-                            placeShip(table, startX, startY, ship.size, direction);
+                    if (canPlaceShip(table, startX, startY, ship.size, direction)) {
+                        // Определяем, в какой массив добавлять корабль
+                        const shipsArray = table.id === 'player-field' ? playerShips : computerShips;
+                        placeShip(table, startX, startY, ship.size, direction, shipsArray); // Передаём shipsArray
 
-                            placed = true;
-                        }
-                        attempts++;
+                        placed = true;
                     }
-                    if (attempts >= maxAttempts) {
-                        console.error(`Не удалось разместить корабль ${ship.name} после ${maxAttempts} попыток`);
-                    }
-                })
-            }
+                    attempts++;
+                }
+                if (attempts >= maxAttempts) {
+                    console.error(`Не удалось разместить корабль ${ship.name} после ${maxAttempts} попыток`);
+                }
+            });
+        }
 
-            placeShipAutomatically(computerTable, shipTypes);
+        // Автоматически размещаем корабли компьютера при загрузке страницы
+        placeShipAutomatically(computerTable, shipTypes);
 
-            document.querySelectorAll('.selectShip').forEach(button => {
-                button.addEventListener('click', function() {
-                    const size = parseInt(this.getAttribute('data-size'));
-                    selectedShip = {size: size};
-                })
+        // Обработчик выбора корабля игроком
+        document.querySelectorAll('.selectShip').forEach(button => {
+            button.addEventListener('click', function() {
+                const size = parseInt(this.getAttribute('data-size'));
+                if(availableShips[size] > 0) {
+                    selectedShip = {size: size};  
+                    availableShips[size]--; // Уменьшаем количество доступных кораблей
+                } else {
+                    alert('Корабли данного типа закончились');
+                }
             })
+        });
 
-            document.getElementById('direction').addEventListener('click', function() {
-                direction = (direction === 'horizontal') ? 'vertical' : 'horizontal';
-                this.textContent = (direction === 'horizontal') ? 'Горизонтально' : 'Вертикально';
+        // Обработчик переключения направления размещения корабля
+        document.getElementById('direction').addEventListener('click', function() {
+            direction = (direction === 'horizontal') ? 'vertical' : 'horizontal';
+            this.textContent = (direction === 'horizontal') ? 'Горизонтально' : 'Вертикально';
+        });
+
+        // Обработчик размещения корабля на поле игрока
+        document.querySelectorAll('#player-field .cell').forEach(cell => {
+            cell.addEventListener('click', function() {
+                if (!selectedShip) {
+                    alert('Сначала выберите корабль!');
+                    return;
                 }
-            )
 
+                const cellId = this.id;
+                const parts = cellId.split('-');
+                const x = parseInt(parts[3]);
+                const y = parseInt(parts[4]);
+
+                if(canPlaceShip(playerTable, x, y, selectedShip.size, direction)) {
+                    placeShip(playerTable, x, y, selectedShip.size, direction, playerShips); // Передаём playerShips
+                    selectedShip = null;
+                } else {
+                    alert('Невозможно разместить корабль сюда!')
+                }
+            })
+        });
+
+        // Обработчик сброса игры
+        document.getElementById('reset-game-button').addEventListener('click', function() {
+            // Сбросить доступные корабли
+            availableShips = {
+                4: 1, // Линкор
+                3: 2, // Крейсеры
+                2: 3, // Эсминцы
+                1: 4  // Катера
+            };
+
+            // Очистка поля игрока
             document.querySelectorAll('#player-field .cell').forEach(cell => {
-                cell.addEventListener('click', function() {
-                    if (!selectedShip) {
-                        alert('Сначала выберите корабль!');
-                        return;
-                    }
+                cell.classList.remove('occupied');
+                cell.textContent = '';
+            });
 
-                    const cellId = this.id;
-                    const parts = cellId.split('-');
-                    const x = parseInt(parts[3]);
-                    const y = parseInt(parts[4]);
+            // Очистка поля компьютера
+            document.querySelectorAll('#computer-field .cell').forEach(cell => {
+                cell.classList.remove('occupied');
+                cell.textContent = '';
+            });
 
-                    if(canPlaceShip(playerTable, x, y, selectedShip.size, direction)) {
-                        placeShip(playerTable, x, y, selectedShip.size, direction);
-                        selectedShip = null;
-                    } else {
-                        alert('Невозможно разместить корабль сюда!')
-                    }
-                })
-            })
-        </script>
-    </body>
+            // Очистка массивов кораблей
+            playerShips.length = 0;
+            computerShips.length = 0;
+
+            // Включение кнопок выбора кораблей и обновление текста
+            document.querySelectorAll('.selectShip').forEach(button => {
+                const size = parseInt(button.getAttribute('data-size'));
+                button.disabled = false;
+                button.textContent = `${button.textContent.split('(')[0].trim()} (${availableShips[size]})`;
+            });
+        });
+
+        // Обработчик начала игры
+        document.getElementById('start-game-button').addEventListener('click', function() {
+            document.querySelector('.fields-container').style.display = 'flex'; 
+
+            this.disabled = true;
+        });
+    </script>
+</body>
 </html>
